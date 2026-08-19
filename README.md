@@ -55,7 +55,7 @@ The five functions named `sampleTunnel`, `sampleGrid`, `samplePlasma`, `sampleVe
 
 ## Upload
 
-Open `HacktroViewportDemo.ino` in Arduino IDE, install **FastLED**, select **ESP32S3 Dev Module**, choose the Huge APP/no-OTA partition profile, then upload. The serial monitor at 115200 baud prints once-per-second renderer timing information.
+Open `HacktroViewportDemo/HacktroViewportDemo.ino` in Arduino IDE, install **FastLED**, select **ESP32S3 Dev Module**, choose the Huge APP/no-OTA partition profile, then upload. The serial monitor at 115200 baud prints once-per-second renderer timing information.
 
 ## License
 
