@@ -97,6 +97,7 @@ enum StoryAct : uint8_t {
   ACT_BOOT_SIGNAL,
   ACT_CORRIDOR,
   ACT_WALKER,
+  ACT_DANCER,
   ACT_MACHINE_CITY,
   ACT_FRACTURE,
   ACT_DEEP_SPACE,
@@ -112,16 +113,17 @@ struct ActDefinition {
   uint8_t titleHue;
 };
 
-// 28 + 37 + 37 + 38 + 37 + 38 + 47 + 38 seconds = exactly five minutes.
+// 28 + 34 + 36 + 34 + 34 + 32 + 34 + 36 + 32 seconds = exactly five minutes.
 const ActDefinition ACTS[ACT_COUNT] = {
   {28000, SCENE_GRID,        150, 150},
-  {37000, SCENE_TUNNEL,      180, 190},
-  {37000, SCENE_VECTOR_CITY,  82,  82},
-  {38000, SCENE_VECTOR_CITY, 205,  28},
-  {37000, SCENE_GRID,          8,   8},
-  {38000, SCENE_STARFIELD,   155, 155},
-  {47000, SCENE_PLASMA,      224, 224},
-  {38000, SCENE_TUNNEL,      150, 150}
+  {34000, SCENE_TUNNEL,      180, 190},
+  {36000, SCENE_VECTOR_CITY,  82,  82},
+  {34000, SCENE_STARFIELD,   212, 212},
+  {34000, SCENE_VECTOR_CITY, 205,  28},
+  {32000, SCENE_GRID,          8,   8},
+  {34000, SCENE_STARFIELD,   155, 155},
+  {36000, SCENE_PLASMA,      224, 224},
+  {32000, SCENE_TUNNEL,      150, 150}
 };
 
 // -----------------------------------------------------------------------------
@@ -188,6 +190,13 @@ void cameraForAct(StoryAct act, uint16_t age, int32_t &camX, int32_t &camY, int3
       camX = -18 * FP_ONE + int32_t(age) * 10;
       camY = 3 * FP_ONE;
       camZ = 2 * FP_ONE;
+      break;
+    case ACT_DANCER:
+      // Scan through the persistent large figure rather than shrinking it to
+      // fit the cube. Sparse body voxels appear against true black space.
+      camX = 14 * FP_ONE + int32_t(age) * 10;
+      camY = 16 * FP_ONE;
+      camZ = 8 * FP_ONE + (int16_t(sin8(beat * 2)) - 128) * 5;
       break;
     case ACT_MACHINE_CITY:
       camX = int32_t(age) * 8;
@@ -280,7 +289,28 @@ CRGB storyPalette(uint8_t index, uint8_t value) {
   return CHSV(hues[index & 7], sats[index & 7], value);
 }
 
+CRGB sampleDancer(uint16_t age, int16_t x, int16_t y, int16_t z) {
+  const StoryVoxel *pose = ((age / 320U) & 1) ? STORY_DANCER_POSE_B : STORY_DANCER_POSE_A;
+  constexpr int8_t ORIGIN_X = 34;
+  constexpr int8_t ORIGIN_Y = 18;
+  constexpr int8_t ORIGIN_Z = 16;
+  for (uint8_t i = 0; i < STORY_DANCER_POINT_COUNT; ++i) {
+    StoryVoxel point;
+    memcpy_P(&point, &pose[i], sizeof(point));
+    if (x == int16_t(ORIGIN_X + point.x) &&
+        y == int16_t(ORIGIN_Y + point.y) &&
+        z == int16_t(ORIGIN_Z + point.z)) {
+      const uint8_t glow = qadd8(165, scale8(sin8(age / 2U + i * 19U), 90));
+      return storyPalette(point.palette, glow);
+    }
+  }
+  return CRGB::Black;
+}
+
 CRGB sampleStoryLandmarks(StoryAct act, uint16_t age, int16_t x, int16_t y, int16_t z, uint8_t time, CRGB underlay) {
+  // The dancer act intentionally suppresses all procedural fills and static
+  // landmarks: the black negative space is part of the performance.
+  if (act == ACT_DANCER) return sampleDancer(age, x, y, z);
   for (uint8_t i = 0; i < STORY_LANDMARK_COUNT; ++i) {
     StoryVoxel voxel;
     memcpy_P(&voxel, &STORY_LANDMARKS[i], sizeof(voxel));
@@ -328,6 +358,10 @@ void renderRing(StoryAct act, uint8_t time, uint8_t progress) {
     if (act == ACT_MACHINE_CITY && ((i + time / 16) % 3 == 0)) {
       localHue = 200;
       value = RING_BRIGHTNESS;
+    }
+    if (act == ACT_DANCER) {
+      localHue = (i & 1) ? 212 : 35;
+      value = qadd8(80, scale8(travel, 175));
     }
     if (act == ACT_FRACTURE && ((i + progress / 16) & 1)) {
       localHue = 8;

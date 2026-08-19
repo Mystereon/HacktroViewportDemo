@@ -43,3 +43,26 @@ const StoryVoxel STORY_WALKER[] PROGMEM = {
 };
 
 constexpr uint8_t STORY_WALKER_COUNT = sizeof(STORY_WALKER) / sizeof(STORY_WALKER[0]);
+
+// The dancer is deliberately an outline-like negative-space figure, not a
+// filled voxel statue. Two broad, readable poses alternate on the stage while
+// the small physical cube scans across her much larger world-space form.
+const StoryVoxel STORY_DANCER_POSE_A[] PROGMEM = {
+  {-1,0,18,7}, {0,0,19,7}, {1,0,18,7},
+  {0,0,14,6}, {0,0,10,6}, {0,0,6,6}, {0,0,2,5},
+  {-4,0,11,7}, {-7,0,14,7}, {-9,0,17,7},
+  {4,0,11,7}, {7,0,8,7}, {9,0,5,7},
+  {-3,0,-3,5}, {-5,0,-9,5},
+  {3,0,-3,5}, {5,0,-9,5}
+};
+
+const StoryVoxel STORY_DANCER_POSE_B[] PROGMEM = {
+  {-1,0,18,7}, {0,0,20,7}, {1,0,18,7},
+  {0,0,14,6}, {0,0,10,6}, {0,0,6,6}, {0,0,2,5},
+  {-4,0,11,7}, {-7,0,8,7}, {-10,0,6,7},
+  {4,0,11,7}, {7,0,15,7}, {9,0,19,7},
+  {-3,0,-3,5}, {-7,0,-8,5},
+  {3,0,-3,5}, {7,0,-7,5}
+};
+
+constexpr uint8_t STORY_DANCER_POINT_COUNT = sizeof(STORY_DANCER_POSE_A) / sizeof(STORY_DANCER_POSE_A[0]);

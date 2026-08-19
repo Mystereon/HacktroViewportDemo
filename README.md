@@ -35,7 +35,7 @@ Power the LEDs from a suitable external 5 V supply and share its ground with the
 
 ## Scene sequence
 
-The simple short loop has been replaced by an authored five-minute story. It has eight unique acts, a fixed 300-second timeline, flash-resident landmark data, title signals, evolving palette language, and a final ascent. The rear ring is a deliberately separate border / overscan effect around the acrylic enclosure.
+The simple short loop has been replaced by an authored five-minute story. It has nine unique acts, a fixed 300-second timeline, flash-resident landmark data, title signals, evolving palette language, and a final ascent. The rear ring is a deliberately separate border / overscan effect around the acrylic enclosure.
 
 | Scene | Virtual world | Rear-ring role |
 |---|---|---|
@@ -44,8 +44,11 @@ The simple short loop has been replaced by an authored five-minute story. It has
 | Plasma volume | Palette-cycling implicit colour field | Fast chroma sweep |
 | Vector city | Procedural illuminated block skyline | Amber/blue city lights |
 | Starfield | Deterministic deep-space particles | Soft blue CRT-style border |
+| Negative-space dancer | A large sparse two-pose figure scanned in world space | Alternating violet/gold stage-light border |
 
-The full non-repeating story structure and its exact timing are in [`FIVE_MINUTE_ACT_SHEET.md`](FIVE_MINUTE_ACT_SHEET.md). The additional authored landmark data is isolated in [`StoryData.h`](StoryData.h), so a future offline converter can extend it without rewriting the renderer.
+Every act follows the [`SCENE_FLOW_CONTRACT.md`](SCENE_FLOW_CONTRACT.md): the cube is a small moving window through one coherent off-screen place, rather than a container for unrelated LED effects. The dancer act is deliberately black except for the persistent sparse figure; negative space is part of its composition.
+
+The full non-repeating story structure and its exact timing are in [`FIVE_MINUTE_ACT_SHEET.md`](FIVE_MINUTE_ACT_SHEET.md). The additional authored landmark and dancer data is isolated in [`HacktroViewportDemo/StoryData.h`](HacktroViewportDemo/StoryData.h), so a future offline converter can extend it without rewriting the renderer.
 
 ## Editing it
 
