@@ -35,7 +35,7 @@ Power the LEDs from a suitable external 5 V supply and share its ground with the
 
 ## Scene sequence
 
-Each scene lasts 6.2 seconds and then loops. The rear ring is a deliberately separate border / overscan effect around the acrylic enclosure.
+The simple short loop has been replaced by an authored five-minute story. It has eight unique acts, a fixed 300-second timeline, flash-resident landmark data, title signals, evolving palette language, and a final ascent. The rear ring is a deliberately separate border / overscan effect around the acrylic enclosure.
 
 | Scene | Virtual world | Rear-ring role |
 |---|---|---|
@@ -44,6 +44,8 @@ Each scene lasts 6.2 seconds and then loops. The rear ring is a deliberately sep
 | Plasma volume | Palette-cycling implicit colour field | Fast chroma sweep |
 | Vector city | Procedural illuminated block skyline | Amber/blue city lights |
 | Starfield | Deterministic deep-space particles | Soft blue CRT-style border |
+
+The full non-repeating story structure and its exact timing are in [`FIVE_MINUTE_ACT_SHEET.md`](FIVE_MINUTE_ACT_SHEET.md). The additional authored landmark data is isolated in [`StoryData.h`](StoryData.h), so a future offline converter can extend it without rewriting the renderer.
 
 ## Editing it
 
