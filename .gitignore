@@ -1,3 +1,5 @@
 .build/
 .build4mb/
 .vscode/
+assets/raw/
+assets/converted/
