@@ -26,6 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--palette", type=int, default=6, choices=range(8), help="Palette index 0..7")
     parser.add_argument("--resolution", type=int, default=48, help="Longest mesh axis in output voxels")
     parser.add_argument("--max-voxels", type=int, default=24000, help="Safety ceiling for generated points")
+    parser.add_argument("--solid", action="store_true", help="Fill a watertight mesh volume; requires scipy")
     parser.add_argument("--source", default="", help="Required human-readable licence/source attribution")
     return parser.parse_args()
 
@@ -48,7 +49,9 @@ def main() -> None:
     if extent <= 0.0:
         raise SystemExit("Input mesh has zero extent")
     pitch = extent / float(args.resolution - 1)
-    voxel_grid = mesh.voxelized(pitch).fill()
+    voxel_grid = mesh.voxelized(pitch)
+    if args.solid:
+        voxel_grid = voxel_grid.fill()
     points = voxel_grid.points
     if len(points) > args.max_voxels:
         raise SystemExit(
@@ -62,7 +65,10 @@ def main() -> None:
     centre = (minimum + maximum) * 0.5
     integer_points = []
     for point in points:
-        x, y, z = (round(float(v)) for v in point - centre)
+        # `trimesh` reports voxel centres in the source mesh's native units.
+        # Convert those values into grid cells before centring; otherwise a
+        # meter- or centimetre-scale source model could collapse to one point.
+        x, y, z = (round(float(v / pitch)) for v in point - centre)
         if not (-127 <= x <= 127 and -127 <= y <= 127 and -127 <= z <= 127):
             raise SystemExit("Centered coordinates exceed StoryVoxel int8 range")
         integer_points.append((x, y, z))

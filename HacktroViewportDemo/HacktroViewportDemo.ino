@@ -24,6 +24,7 @@
 
 #include <FastLED.h>
 #include "StoryData.h"
+#include "GeneratedQuaterniusRobot.h"
 
 // Arduino inserts generated function prototypes before user declarations. A
 // fixed-underlying-type forward declaration keeps those prototypes valid until
@@ -60,6 +61,19 @@ CRGB leds[TOTAL_LEDS];
 uint32_t nextFrameAt = 0;
 uint32_t maxRenderMicros = 0;
 uint32_t telemetryAt = 0;
+
+// The imported robot is a real 3,270-voxel CC0 mesh conversion. Its flash
+// point list is expanded once into a 25x21x37 single-bit occupancy cache so a
+// visible world sample is a bounded bit lookup, never a 3,270-point search.
+constexpr uint8_t ROBOT_X = 25;
+constexpr uint8_t ROBOT_Y = 21;
+constexpr uint8_t ROBOT_Z = 37;
+constexpr uint16_t ROBOT_BITS = uint16_t(ROBOT_X) * ROBOT_Y * ROBOT_Z;
+constexpr uint16_t ROBOT_MASK_BYTES = (ROBOT_BITS + 7U) / 8U;
+uint8_t robotMask[ROBOT_MASK_BYTES];
+constexpr int8_t ROBOT_ORIGIN_X = 0;
+constexpr int8_t ROBOT_ORIGIN_Y = 12;
+constexpr int8_t ROBOT_ORIGIN_Z = 18;
 
 // -----------------------------------------------------------------------------
 // Physical mapper and integer-only virtual-world helpers
@@ -187,9 +201,11 @@ void cameraForAct(StoryAct act, uint16_t age, int32_t &camX, int32_t &camY, int3
       camZ = 6 * FP_ONE + int32_t(age) * 7;
       break;
     case ACT_WALKER:
-      camX = -18 * FP_ONE + int32_t(age) * 10;
-      camY = 3 * FP_ONE;
-      camZ = 2 * FP_ONE;
+      // Cross the converted 25x21x37 robot slowly enough that its body reads
+      // as a persistent landmark rather than a model forced into the cube.
+      camX = -15 * FP_ONE + (int32_t(age) * 30 * FP_ONE) / ACTS[act].durationMs;
+      camY = 8 * FP_ONE + (int16_t(sin8(beat * 2)) - 128) * 3;
+      camZ = 15 * FP_ONE + (int16_t(sin8(beat * 3 + 49)) - 128) * 5;
       break;
     case ACT_DANCER:
       // Scan through the persistent large figure rather than shrinking it to
@@ -307,6 +323,28 @@ CRGB sampleDancer(uint16_t age, int16_t x, int16_t y, int16_t z) {
   return CRGB::Black;
 }
 
+uint16_t robotBitIndex(uint8_t x, uint8_t y, uint8_t z) {
+  return (uint16_t(z) * ROBOT_Y + y) * ROBOT_X + x;
+}
+
+bool robotOccupied(int16_t worldX, int16_t worldY, int16_t worldZ) {
+  const int16_t x = worldX - ROBOT_ORIGIN_X + 12;
+  const int16_t y = worldY - ROBOT_ORIGIN_Y + 10;
+  const int16_t z = worldZ - ROBOT_ORIGIN_Z + 18;
+  if (x < 0 || x >= ROBOT_X || y < 0 || y >= ROBOT_Y || z < 0 || z >= ROBOT_Z) return false;
+  const uint16_t bit = robotBitIndex(uint8_t(x), uint8_t(y), uint8_t(z));
+  return robotMask[bit >> 3] & (1U << (bit & 7));
+}
+
+CRGB sampleImportedRobot(uint16_t age, int16_t x, int16_t y, int16_t z) {
+  // A gentle bob is a scene cue; individual limb keyframes will be supplied
+  // by separate converted poses once selected from the source animation pack.
+  const int8_t bob = (sin8(age >> 2) > 127) ? 1 : 0;
+  if (!robotOccupied(x, y, z - bob)) return CRGB::Black;
+  const uint8_t shine = qadd8(150, scale8(sin8(age / 3U + uint8_t(x * 11 + z * 7)), 95));
+  return storyPalette(4, shine);
+}
+
 CRGB sampleStoryLandmarks(StoryAct act, uint16_t age, int16_t x, int16_t y, int16_t z, uint8_t time, CRGB underlay) {
   // The dancer act intentionally suppresses all procedural fills and static
   // landmarks: the black negative space is part of the performance.
@@ -320,18 +358,7 @@ CRGB sampleStoryLandmarks(StoryAct act, uint16_t age, int16_t x, int16_t y, int1
     }
   }
 
-  if (act == ACT_WALKER) {
-    const int8_t walkerX = int8_t((age / 650U) % 24U) - 12;
-    const bool leftStep = ((age / 220U) & 1) == 0;
-    for (uint8_t i = 0; i < STORY_WALKER_COUNT; ++i) {
-      StoryVoxel voxel;
-      memcpy_P(&voxel, &STORY_WALKER[i], sizeof(voxel));
-      int8_t wx = voxel.x + walkerX;
-      int8_t wz = voxel.z;
-      if (i >= 9) wx += (leftStep == (i & 1)) ? -1 : 1;
-      if (wx == x && 3 == y && wz == z) return storyPalette(voxel.palette, 255);
-    }
-  }
+  if (act == ACT_WALKER) return sampleImportedRobot(age, x, y, z);
   return underlay;
 }
 
@@ -427,8 +454,23 @@ void renderFrame(uint32_t now) {
   }
 }
 
+void initialiseImportedRobot() {
+  memset(robotMask, 0, sizeof(robotMask));
+  for (uint16_t i = 0; i < QUATERNIUS_ROBOT_IDLE_COUNT; ++i) {
+    StoryVoxel voxel;
+    memcpy_P(&voxel, &QUATERNIUS_ROBOT_IDLE[i], sizeof(voxel));
+    const int16_t x = voxel.x + 12;
+    const int16_t y = voxel.z + 10;
+    const int16_t z = voxel.y + 18;
+    if (x < 0 || x >= ROBOT_X || y < 0 || y >= ROBOT_Y || z < 0 || z >= ROBOT_Z) continue;
+    const uint16_t bit = robotBitIndex(uint8_t(x), uint8_t(y), uint8_t(z));
+    robotMask[bit >> 3] |= uint8_t(1U << (bit & 7));
+  }
+}
+
 void setup() {
   Serial.begin(115200);
+  initialiseImportedRobot();
   FastLED.addLeds<CHIPSET, DATA_PIN, COLOR_ORDER>(leds, TOTAL_LEDS);
   FastLED.setBrightness(GLOBAL_BRIGHTNESS);
   FastLED.clear(true);

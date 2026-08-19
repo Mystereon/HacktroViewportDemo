@@ -48,7 +48,15 @@ The simple short loop has been replaced by an authored five-minute story. It has
 
 Every act follows the [`SCENE_FLOW_CONTRACT.md`](SCENE_FLOW_CONTRACT.md): the cube is a small moving window through one coherent off-screen place, rather than a container for unrelated LED effects. The dancer act is deliberately black except for the persistent sparse figure; negative space is part of its composition.
 
-The full non-repeating story structure and its exact timing are in [`FIVE_MINUTE_ACT_SHEET.md`](FIVE_MINUTE_ACT_SHEET.md). The additional authored landmark and dancer data is isolated in [`HacktroViewportDemo/StoryData.h`](HacktroViewportDemo/StoryData.h), so a future offline converter can extend it without rewriting the renderer.
+The full non-repeating story structure and its exact timing are in [`FIVE_MINUTE_ACT_SHEET.md`](FIVE_MINUTE_ACT_SHEET.md). Authored landmarks and the sparse dancer are isolated in [`HacktroViewportDemo/StoryData.h`](HacktroViewportDemo/StoryData.h).
+
+## Real converted asset: Quaternius robot
+
+The Walker act now scans through a **real CC0 Quaternius LowPoly Robot** supplied by the project owner. Its OBJ mesh is surface-voxelised offline at 36 cells across its longest axis, producing [`GeneratedQuaterniusRobot.h`](HacktroViewportDemo/GeneratedQuaterniusRobot.h): **3,270** palette-indexed flash voxels. At boot, those points become a 25×21×37 single-bit occupancy cache, so each of the 125 per-frame viewport samples remains one bounded bit lookup rather than a mesh or point-cloud search.
+
+Source, licence, parameters, generated-header path, and act usage are recorded in [`ASSET_MANIFEST.md`](ASSET_MANIFEST.md). The converter itself is [`tools/mesh_to_storyvoxels.py`](tools/mesh_to_storyvoxels.py); its asset workflow is documented in [`ASSET_PIPELINE.md`](ASSET_PIPELINE.md).
+
+With the imported robot included, the verified ESP32-S3 Huge APP/no-OTA build uses **443,287 bytes (14%)** of its 3 MB application partition and **30,180 bytes (9%)** of static RAM.
 
 ## Editing it
 
